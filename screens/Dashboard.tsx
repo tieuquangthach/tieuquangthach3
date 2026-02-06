@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppData, NguoiDung, PhieuBaiTap, HocSinh } from '../types';
 
 interface DashboardProps {
@@ -12,30 +12,63 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ data, user, onNavigateToLesson, onNavigateToAI, onOpenWorksheet }) => {
   const isGiaoVien = user?.vaiTro === 'giaoVien';
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // --- LOGIC SLIDESHOW ---
+  const slides = [
+    {
+      id: 1,
+      title: isGiaoVien ? "Quản lý lớp học hiệu quả" : "Chinh phục điểm 10 Toán",
+      desc: isGiaoVien 
+        ? "Công cụ hỗ trợ soạn bài, giao bài tập và theo dõi tiến độ học sinh toàn diện." 
+        : "Luyện tập mỗi ngày với kho bài tập đa dạng và sự hỗ trợ từ trợ lý AI thông minh.",
+      bg: "bg-gradient-to-r from-blue-600 to-indigo-700",
+      icon: "school",
+      image: "https://img.freepik.com/free-vector/mathematics-concept-illustration_114360-3972.jpg?w=740&t=st=1709999999~exp=1710000599~hmac=abcdef", // Placeholder hoặc bỏ nếu dùng thuần CSS
+      buttonText: "Bắt đầu ngay",
+      action: () => {} // Default action
+    },
+    {
+      id: 2,
+      title: "Đấu trường Toán học",
+      desc: "Tham gia thi đua trên Bảng Phong Thần. Xem ai là người giải toán nhanh nhất tuần này!",
+      bg: "bg-gradient-to-r from-yellow-500 to-orange-500",
+      icon: "emoji_events",
+      buttonText: "Xem xếp hạng",
+      action: () => {} // Could trigger navigation in parent if needed
+    },
+    {
+      id: 3,
+      title: "Trợ lý AI MathPro",
+      desc: "Gặp khó khăn? Chụp ảnh bài toán và nhận hướng dẫn giải chi tiết ngay lập tức.",
+      bg: "bg-gradient-to-r from-purple-600 to-pink-600",
+      icon: "smart_toy",
+      buttonText: "Hỏi AI ngay",
+      action: onNavigateToAI
+    }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000); // Tự động chuyển sau 5s
+    return () => clearInterval(timer);
+  }, [slides.length]);
 
   // --- LOGIC HIỂN THỊ DỮ LIỆU ---
   
   // 1. Xác định khối lớp để lọc bài tập
-  // Nếu là học sinh: Lấy số khối từ lớp (VD: "9A" -> "9")
-  // Nếu là giáo viên: Hiển thị bài tập của tất cả các khối (studentGradeStr = null)
   const studentGradeStr = (!isGiaoVien && data.hocSinh.lop !== '--') 
     ? data.hocSinh.lop.match(/\d+/)?.[0] 
     : null;
   
   // 2. Lấy 4 phiếu bài tập mới nhất
-  // Nếu studentGradeStr có giá trị -> Lọc theo khối
-  // Nếu là Học sinh -> HIỆN PHIẾU TỰ LUYỆN HOẶC TỰ LUẬN
-  // Nếu là Giáo viên -> Hiện tất cả
   const worksheetsToDisplay = data.danhSachPhieuBaiTap
     .filter(w => {
        const matchGrade = !studentGradeStr || w.lop === studentGradeStr;
-       
        const isConsolidation = w.monHoc === 'Củng cố' || w.monHoc === 'Tự luyện';
        const isEssay = w.monHoc === 'Tự luận';
-       
-       // Học sinh thấy: Tự luyện + Tự luận. Giáo viên thấy: Tất cả.
        const matchType = isGiaoVien ? true : (isConsolidation || isEssay); 
-       
        return matchGrade && matchType;
     })
     .slice(0, 4);
@@ -50,32 +83,97 @@ const Dashboard: React.FC<DashboardProps> = ({ data, user, onNavigateToLesson, o
   // Hàm helper xác định màu sắc badge dựa trên loại bài
   const getBadgeColorClass = (ws: PhieuBaiTap) => {
     if (ws.monHoc === 'Củng cố' || ws.monHoc === 'Tự luyện') {
-        // Màu xanh lá (Emerald) cho Tự luyện
         return 'bg-emerald-500 border-emerald-600 shadow-[0_4px_10px_rgba(16,185,129,0.4)]';
     }
     if (ws.monHoc === 'Tự luận') {
-        // Màu đỏ hồng (Rose) cho Tự luận
         return 'bg-rose-500 border-rose-600 shadow-[0_4px_10px_rgba(225,29,72,0.4)]';
     }
-    // Màu xanh dương (Blue) mặc định cho Luyện tập
     return 'bg-[#0055ff] border-[#0044cc] shadow-[0_4px_10px_rgba(0,85,255,0.4)]';
   };
 
   return (
     <div className="space-y-10 animate-fadeIn">
-      {/* Header */}
-      <section className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      
+      {/* --- HERO SLIDESHOW SECTION --- */}
+      <section className="relative w-full h-[280px] md:h-[320px] rounded-[3rem] overflow-hidden shadow-2xl shadow-blue-100 group">
+        {slides.map((slide, index) => (
+          <div 
+            key={slide.id}
+            className={`absolute inset-0 transition-all duration-700 ease-in-out ${slide.bg} flex items-center px-8 md:px-16
+              ${index === currentSlide ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10 pointer-events-none'}
+            `}
+          >
+            {/* Background Decor */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+            <div className="absolute bottom-0 left-0 w-60 h-60 bg-black/5 rounded-full blur-2xl translate-y-1/2 -translate-x-1/4"></div>
+            <span className="material-symbols-outlined absolute right-10 bottom-[-40px] text-[250px] text-white/10 rotate-12">{slide.icon}</span>
+
+            {/* Content */}
+            <div className="relative z-10 max-w-2xl text-white space-y-4 md:space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                 <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-lg text-[10px] font-black uppercase tracking-widest border border-white/10">
+                    Nổi bật
+                 </span>
+                 <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+              </div>
+              
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
+                {slide.title}
+              </h2>
+              <p className="text-sm md:text-lg font-medium opacity-90 max-w-lg leading-relaxed">
+                {slide.desc}
+              </p>
+              
+              <button 
+                onClick={slide.action}
+                className="mt-4 px-8 py-4 bg-white text-slate-900 rounded-2xl font-black text-xs md:text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-3 group/btn"
+              >
+                {slide.buttonText}
+                <span className="material-symbols-outlined group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {/* Slide Indicators (Dots) */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-20 bg-black/20 backdrop-blur-sm px-4 py-2 rounded-full">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentSlide(idx)}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${idx === currentSlide ? 'bg-white w-8' : 'bg-white/40 hover:bg-white/60'}`}
+            />
+          ))}
+        </div>
+        
+        {/* Navigation Buttons (Hidden on mobile, show on hover) */}
+        <button 
+            onClick={() => setCurrentSlide(prev => (prev === 0 ? slides.length - 1 : prev - 1))}
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/10 hover:bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100 z-20"
+        >
+            <span className="material-symbols-outlined">chevron_left</span>
+        </button>
+        <button 
+            onClick={() => setCurrentSlide(prev => (prev + 1) % slides.length)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white/10 hover:bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100 z-20"
+        >
+            <span className="material-symbols-outlined">chevron_right</span>
+        </button>
+      </section>
+
+      {/* --- USER WELCOME (Small) --- */}
+      <section className="flex items-center justify-between px-2">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            {isGiaoVien ? `Chào mừng Thầy Tiêu Quang Thạch! 👋` : `Xin chào, ${data.hocSinh.ten.split(' ').pop()}! 👋`}
+          <h2 className="text-xl font-bold text-gray-900">
+            {isGiaoVien ? `Thầy Tiêu Quang Thạch` : `Xin chào, ${data.hocSinh.ten.split(' ').pop()}!`}
           </h2>
-          <p className="text-gray-500 font-medium">
-            {isGiaoVien ? 'Thầy đang xem giao diện bài tập của học sinh.' : 'Hôm nay em muốn chinh phục bài toán nào?'}
+          <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">
+             Chúc một ngày tốt lành!
           </p>
         </div>
-        <div className="bg-white px-5 py-2.5 rounded-2xl border border-teal-100 shadow-sm flex items-center gap-3 w-fit">
-           <div className={`w-3 h-3 rounded-full animate-pulse shadow-[0_0_10px_rgba(20,184,166,0.5)] ${isGiaoVien ? 'bg-blue-500' : 'bg-teal-500'}`}></div>
-           <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
+        <div className="bg-white px-4 py-2 rounded-xl border border-teal-100 shadow-sm flex items-center gap-2">
+           <div className={`w-2 h-2 rounded-full animate-pulse ${isGiaoVien ? 'bg-blue-500' : 'bg-teal-500'}`}></div>
+           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
              {isGiaoVien ? 'Giáo viên' : `Lớp ${data.hocSinh.lop}`}
            </span>
         </div>

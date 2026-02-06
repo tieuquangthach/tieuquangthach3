@@ -19,6 +19,7 @@ import AdminClasses from './screens/AdminClasses';
 import AdminWorksheets from './screens/AdminWorksheets';
 import QuizSystem from './screens/QuizSystem';
 import SmartWorksheet from './screens/SmartWorksheet';
+import Exams from './screens/Exams';
 
 const App: React.FC = () => {
   const [data, setData] = useState<AppData>({ ...INITIAL_DATA, allHocSinh: [], allLopHoc: [] });
@@ -238,6 +239,11 @@ const App: React.FC = () => {
   const essayInsertIndex = user?.vaiTro === 'giaoVien' ? 3 : 2;
   NAV_ITEMS.splice(essayInsertIndex, 0, essayTab);
 
+  // Thêm tab "Thi cử" vào sau "Tự luận"
+  const examsTab = { id: Screen.EXAMS, label: 'Thi cử', icon: 'edit_document' };
+  const examsInsertIndex = user?.vaiTro === 'giaoVien' ? 4 : 3;
+  NAV_ITEMS.splice(examsInsertIndex, 0, examsTab);
+
   if (!user && !loading) return <Login onLogin={handleLogin} />;
 
   if (loading) {
@@ -430,6 +436,9 @@ const App: React.FC = () => {
             setActiveScreen(Screen.SMART_WORKSHEET); 
           }}
         />;
+
+      case Screen.EXAMS:
+        return <Exams data={data} onStartExam={(exam) => alert(`Bắt đầu làm bài: ${exam.tenDe}`)} />;
 
       default: 
         return <Dashboard data={data} user={user} onNavigateToLesson={() => {}} onNavigateToAI={() => {}} onOpenWorksheet={() => {}} />;
